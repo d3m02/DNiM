@@ -4,97 +4,86 @@
 
 #if __cplusplus >= 202002L
 # include <format>
-# include <string_view>
-#elif __cplusplus < 201103L
-# include <sstream>
 #endif
 
 namespace Log {
 
-/** Hidding from user of header internal implementation */
-#if __cplusplus >= 202002L
-    using enum Log::LogLevel;
-#endif
 
-#if __cplusplus >= 202002L
-constexpr std::string_view
-#else
-const char* 
-#endif
 /** @brief Printable log level label + decoration */
-logLevelStr(Log::LogLevel level)
+const char* logLevelStr(Log::LogLevel level)
 {
     switch (level) 
     {
-        case DebugLevel:    return "[DEBUG]\t";
-        case InfoLevel:     return "[INFO]\t";
-        case WarringLevel:  return "[WARNING]\t";
-        case ErrorLevel:    return "[ERROR]\t";
-        default:            return "[UNKNOWN]\t";
+        case Log::LogLevel::DebugLevel:    return "[DEBUG]\t";
+        case Log::LogLevel::InfoLevel:     return "[INFO]\t";
+        case Log::LogLevel::WarringLevel:  return "[WARNING]\t";
+        case Log::LogLevel::ErrorLevel:    return "[ERROR]\t";
+        default:                           return "[UNKNOWN]\t";
     }
 }
 
-#if __cplusplus >= 202002L
+
+#if __cplusplus >= 201703L
 /** @brief Format log message and output in cout */
-void printMsg(LogLevel level, std::string_view source, std::string_view message)
+void printMsg(const char* level, std::string_view source, std::string_view  message)
 #else
 /** @brief Format log message and output in cout */
-void printMsg(LogLevel level, const std::string& source, const std::string& message)
+void printMsg(const char* level, std::string&& source, const std::string& message)
 #endif
 {
-    std::cout << logLevelStr(level) 
-              << "| "<< source << " \t| "
-              << message << "\n";
+    std::cout << level << message 
+              << " @ " << source << "\n";
 }
 
-#if __cplusplus >= 202302L
-constexpr
-#endif
+
 #if __cplusplus >= 202002L
+    
 /** @brief Format and decorate log message source */
 std::string getPrittyName(const std::source_location& source)
 {
-    return std::format("{}:{} {}", source.file_name(),
-                                   source.line(),
-                                   source.function_name());
+    return std::format("{}:{} `{}`", source.file_name(),
+                                     source.line(),
+                                     source.function_name());
 };
+
 #else
+
 /** @brief Format and decorate log message source */
 std::string LogObject::getPrittyName()
 {
-// TODO: constructing std::string via concatenation migbe lees efficient than c++98 version, compare and remove if redundant
-# if __cplusplus >= 201103L
-    return std::string(file_name()) + ":" + std::to_string(line()) + " " + function_name();
-# else 
-    std::ostringstream oss;
-    oss << file_name() << ":" << line() << " " << function_name();
-    return oss.str();
-# endif
+    return std::string(file_name()) + ":" + std::to_string(line()) + " `" + function_name() + '`';
 };
+
 #endif
 
-/** C++20 implementation using std::source_location for decorrating log message */
+/* C++20 implementation can take advantages of std::source_location for decorrating log message */
 #if __cplusplus >= 202002L
 
+using enum Log::LogLevel;
 // TODO: Compare template approach with obect-oriented approach and select better option
 template<LogLevel level>
 void LogHandler(std::string_view message, std::source_location source)
 {
-    printMsg(level, getPrittyName(source), message);
+    printMsg(logLevelStr(level), getPrittyName(source), message);
 }
 
 /** Explicit instantiation of templates */
 template void LogHandler<DebugLevel>(std::string_view, std::source_location);
 template void LogHandler<InfoLevel>(std::string_view, std::source_location);
 template void LogHandler<WarringLevel>(std::string_view, std::source_location);
+    
 template void LogHandler<ErrorLevel>(std::string_view, std::source_location);
 
-#else // Compitabily fallback version, designed to support C++98 and later
+#else  
 
-/** @brief trick user with Log::Error() - it's not an function call, it's create LogObject(...).operator(..) */
+// trick user with Log::Error() - it's not an function call, it's create LogObject(...).operator(..)
+#if __cplusplus >= 201703L
+LogObject& LogObject::operator() (std::string_view message)
+#else
 LogObject& LogObject::operator() (const std::string& message)
+#endif
 {
-    printMsg(this->m_level, getPrittyName(), message);
+    printMsg(logLevelStr(this->m_level), getPrittyName(), message);
     return *this;
 }
 

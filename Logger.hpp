@@ -1,28 +1,29 @@
 #pragma once
 
-#if __cplusplus >= 202002L
-# include <source_location>
+#if __cplusplus >= 201703L
 # include <string_view>
 #endif
 
-#include <string>
+#if __cplusplus >= 202002L
+# include <source_location>
+#else
+# include <string>
+#endif
+
 
 /**
  * @brief Log functions implementation for Dignostics and Information System (DnIS)  
  */
 namespace Log {
-#if __cplusplus >= 202002L
-    enum class LogLevel : char
-#else
-    enum LogLevel
-#endif
-    {
-        UnkownLevel = 0,
-        DebugLevel,
-        InfoLevel,
-        WarringLevel,
-        ErrorLevel
-    };
+
+enum class LogLevel : char
+{
+    UnkownLevel = 0,
+    DebugLevel,
+    InfoLevel,
+    WarringLevel,
+    ErrorLevel
+};
 
 #if __cplusplus >= 202002L
 
@@ -46,7 +47,7 @@ inline void Warning(std::string_view message, std::source_location source = std:
 inline void Error(std::string_view message, std::source_location source = std::source_location::current()) 
 { LogHandler<Log::LogLevel::ErrorLevel>(message, source); }
 
-#else // Compitabily fallback version, designed to support C++98 and later
+#else // Compitabily fallback version, designed to support C++11 and later
     class LogObject
     {
     public:
@@ -54,7 +55,11 @@ inline void Error(std::string_view message, std::source_location source = std::s
             : m_file(file), m_function(function), m_line(line), m_level(level)
         {}
 
+#if __cplusplus >= 201703L
+        LogObject& operator() (std::string_view message);
+#else 
         LogObject& operator() (const std::string& message);
+#endif
     
     private:
         // Mimicate std::source_location member functions
@@ -71,13 +76,13 @@ inline void Error(std::string_view message, std::source_location source = std::s
     };
 
     /** @brief Print message with [DEBUG] label and mesasge source */
-    #define Debug LogObject(__FILE__, __func__, __LINE__, Log::DebugLevel)
+    #define Debug LogObject(__FILE__, __func__, __LINE__, Log::LogLevel::DebugLevel)
     /** @brief Print message with [INFO] label and mesasge source */
-    #define Info LogObject(__FILE__, __func__, __LINE__, Log::InfoLevel)
+    #define Info LogObject(__FILE__, __func__, __LINE__, Log::LogLevel::InfoLevel)
     /** @brief Print message with [WARNING] label and mesasge source */
-    #define Warning LogObject(__FILE__, __func__, __LINE__, Log::WarringLevel)
+    #define Warning LogObject(__FILE__, __func__, __LINE__, Log::LogLevel::WarringLevel)
     /** @brief Print message with [ERROR] label and mesasge source */
-    #define Error LogObject(__FILE__, __func__, __LINE__, Log::ErrorLevel)
+    #define Error LogObject(__FILE__, __func__, __LINE__, Log::LogLevel::ErrorLevel)
 
 #endif
 }

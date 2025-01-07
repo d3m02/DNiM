@@ -5,11 +5,6 @@
 
 #if __cplusplus >= 202002L
 # include <format>
-#endif 
-
-#if __cplusplus < 201103L
-# include <sstream>
-# define nullptr NULL
 #endif
 
 #ifdef _WIN32
@@ -21,16 +16,13 @@
 namespace CrashHandler {
 
 /** @brief Show simple crash dialog. Currently availible only on Windows */
-void showReport(const std::string& cause)
+void showReport(std::string&& cause)
 {
 #ifdef _WIN32
-    MessageBox(nullptr, cause.c_str(), "Crashed!", MB_OK | MB_ICONERROR);
+    MessageBox(nullptr, std::move(cause).c_str(), "Crashed!", MB_OK | MB_ICONERROR);
 #endif
 }
 
-#if __cplusplus >= 202002L
-constexpr
-#endif
 /** @brief Convert signal to human readable string */
 std::string causeToString(int signal)
 {
@@ -48,25 +40,18 @@ std::string causeToString(int signal)
     default:
     #if __cplusplus >= 202002L
         return std::format("Unknown signal ({})", signal);
-    #elif __cplusplus >= 201103L    // C++11 at least
-        return "Unknown signal (" + std::to_string(signal) + ")";
-    #else   // C++98, seriously?
-        std::ostringstream oss;
-        oss << "Unknown signal (" << signal << ")";
-        return oss.str();
+    #else // C++11 fallback
+        return std::string{"Unknown signal ("} + std::to_string(signal) + ")";
     #endif
     }
 }
 
-#if __cplusplus >= 201103L
-[[noreturn]]
-#endif 
 /** @brief Signal handler function */
-void signalHandler(int signal)
+[[noreturn]] void signalHandler(int signal)
 {
-    std::string cause = causeToString(signal);
+    auto cause = causeToString(signal);
     Log::Error(cause);
-    showReport(cause);
+    showReport(std::move(cause));
     std::exit(signal);
 }
 
