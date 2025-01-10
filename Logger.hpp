@@ -25,27 +25,29 @@ enum class LogLevel : char
     ErrorLevel
 };
 
+void test(Log::LogLevel level, std::string_view, std::source_location);
+
 #if __cplusplus >= 202002L
 
-// Template handler declaration
-template<Log::LogLevel level>
-void LogHandler(std::string_view message, std::source_location);
+/** @brief log-level message handler function */
+void LogHandler(Log::LogLevel, std::string_view, std::source_location);
+
 
 /** @brief Print message with [DEBUG] label and mesasge source */
 inline void Debug(std::string_view message, std::source_location source = std::source_location::current()) 
-{ LogHandler<Log::LogLevel::DebugLevel>(message, source); }
+{ Log::LogHandler(Log::LogLevel::DebugLevel, message, source); }
 
 /** @brief Print message with [INFO] label and mesasge source */
 inline void Info(std::string_view message, std::source_location source = std::source_location::current()) 
-{ LogHandler<Log::LogLevel::InfoLevel>(message, source); }
+{ Log::LogHandler(Log::LogLevel::InfoLevel, message, source); }
 
 /** @brief Print message with [WARNING] label and mesasge source */
 inline void Warning(std::string_view message, std::source_location source = std::source_location::current()) 
-{ LogHandler<Log::LogLevel::WarringLevel>(message, source); }
+{ Log::LogHandler(Log::LogLevel::WarringLevel, message, source); }
 
 /** @brief Print message with [ERROR] label and mesasge source */
 inline void Error(std::string_view message, std::source_location source = std::source_location::current()) 
-{ LogHandler<Log::LogLevel::ErrorLevel>(message, source); }
+{ Log::LogHandler(Log::LogLevel::ErrorLevel, message, source); }
 
 #else // Compitabily fallback version, designed to support C++11 and later
     class LogObject

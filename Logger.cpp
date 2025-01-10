@@ -8,7 +8,6 @@
 
 namespace Log {
 
-
 /** @brief Printable log level label + decoration */
 const char* logLevelStr(Log::LogLevel level)
 {
@@ -60,19 +59,11 @@ std::string LogObject::getPrittyName()
 #if __cplusplus >= 202002L
 
 using enum Log::LogLevel;
-// TODO: Compare template approach with obect-oriented approach and select better option
-template<LogLevel level>
-void LogHandler(std::string_view message, std::source_location source)
+// TODO: Compare overload approach with obect-oriented approach and select better option
+void LogHandler(Log::LogLevel level, std::string_view message, std::source_location source)
 {
     printMsg(logLevelStr(level), getPrittyName(source), message);
 }
-
-/** Explicit instantiation of templates */
-template void LogHandler<DebugLevel>(std::string_view, std::source_location);
-template void LogHandler<InfoLevel>(std::string_view, std::source_location);
-template void LogHandler<WarringLevel>(std::string_view, std::source_location);
-    
-template void LogHandler<ErrorLevel>(std::string_view, std::source_location);
 
 #else  
 
